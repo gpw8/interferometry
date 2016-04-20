@@ -8,7 +8,7 @@ clear, close all
 % on. Then increase the number of sources (Ns=1000) for more effective
 % interference. You can see how the source XC changes with increasing
 % numbers of sources
-Ns=450;
+Ns=40;
 
 % Another thing to modify is the distribution of sources. You can change
 % the range of angles (see phi below) as well as the range of distances
@@ -17,7 +17,7 @@ Ns=450;
 % Lastly, you can add a single scatterer (xD,yD below). Change this flag to
 % 1 if you want to include the scatterer. Note that if you change this to
 % 1, there will be a large spike at zero lag in the correlations
-scatterer_flag=1;
+scatterer_flag=0;
 
 % First, define station locations:
 xA=-100; % distance units can be anything here
@@ -35,7 +35,7 @@ phi=linspace(0,2*pi,Ns);
 % function
 % phi=linspace(0.25,1.25*pi,Ns);
 
-r=500; % this is the radius of the circle of sources
+r=200; % this is the radius of the circle of sources
 
 % You can also try sources at random distances. What you will see is it
 % does not change the correlation function much although it obviously
