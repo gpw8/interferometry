@@ -7,8 +7,13 @@
 % on. Then increase the number of sources (Ns=1000) for more effective
 % interference. You can see how the source XC changes with increasing
 % numbers of sources
+
+% Another thing to modify is the distribution of sources. You can change
+% the range of angles (see phi below) as well as the range of distances
+% (see r below)
+
 clear, close all
-Ns=400;
+Ns=4000;
 
 % First, define station locations:
 xA=-100; % distance units can be anything here
@@ -25,9 +30,14 @@ phi=linspace(0,2*pi,Ns);
 % function
 % phi=linspace(0.25,1.25*pi,Ns);
 
-r=250;          % this is the radius of the circle of sources
-xs=r*cos(phi);  % x position of sources
-ys=r*sin(phi);  % y position of sources
+r=250; % this is the radius of the circle of sources
+
+% You can also try sources at random distances. What you will see is it
+% does not change the correlation function much although it obviously 
+% changes the arrival times of the direct waves at the stations
+% r=randi([500 1000],1,Ns);
+xs=r.*cos(phi);  % x position of sources
+ys=r.*sin(phi);  % y position of sources
 
 figure
 plot(xA,yA,'k^',xB,yB,'b^')
@@ -76,7 +86,7 @@ ttB=dB/c;
 
 %% 
 % and the seismograms for A and B
-totsamp=ceil(max(ttB)/delta)+nsamp;
+totsamp=ceil(max([ttA,ttB])/delta)+nsamp;
 tottime=totsamp*delta;
 seisA=zeros(Ns,totsamp);
 seisB=seisA;
