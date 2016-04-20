@@ -8,16 +8,16 @@ clear, close all
 % on. Then increase the number of sources (Ns=1000) for more effective
 % interference. You can see how the source XC changes with increasing
 % numbers of sources
-Ns=50;
+Ns=450;
 
 % Another thing to modify is the distribution of sources. You can change
 % the range of angles (see phi below) as well as the range of distances
 % (see r below)
 
 % Lastly, you can add a single scatterer (xD,yD below). Change this flag to
-% 1 if you want to include the scatterer
-scatterer_flag=1; % note that if you change this to 1,
-
+% 1 if you want to include the scatterer. Note that if you change this to
+% 1, there will be a large spike at zero lag in the correlations
+scatterer_flag=1;
 
 % First, define station locations:
 xA=-100; % distance units can be anything here
@@ -35,7 +35,7 @@ phi=linspace(0,2*pi,Ns);
 % function
 % phi=linspace(0.25,1.25*pi,Ns);
 
-r=250; % this is the radius of the circle of sources
+r=500; % this is the radius of the circle of sources
 
 % You can also try sources at random distances. What you will see is it
 % does not change the correlation function much although it obviously
@@ -95,9 +95,10 @@ if scatterer_flag
     disp('adding scattered arrival')
     
     xD=0;
-    yD=-200;
+    yD=-250;
     figure(1)
-    plot(xD,yD,'ko')
+    plot(xD,yD,'ko'); legend('station A','station B','sources','scatterer')
+    
     dDA=sqrt( (xD-xs).^2 + (yD-ys).^2) + sqrt( (xD-xA).^2 + (yD-yA).^2  );
     ttDA=dDA/c;
     dDB=sqrt( (xD-xs).^2 + (yD-ys).^2) + sqrt( (xD-xB).^2 + (yD-yB).^2  );
@@ -156,13 +157,18 @@ for n=1:Ns
 end
 
 % if there is a scatterer, you will get a large positive correlation at 0
-% lag. You can zero that out here
+% lag. You can suppress that here
 if scatterer_flag
     midsamp=totsamp;
-    srtsamp=midsamp-length(s);
-    stpsamp=midsamp+length(s);
-    xc(:,srtsamp:stpsamp)=0*xc(:,srtsamp:stpsamp);
+    srtsamp=(midsamp-length(s)+1);
+    stpsamp=(midsamp+length(s)-1);
+    tmpxc=xcorr(s,s,'coeff');
+    for n=1:Ns
+        xc(n,srtsamp:stpsamp)=xc(n,srtsamp:stpsamp)-tmpxc/2;
+    end
 end
+
+xcstack=sum(xc)/Ns;
 
 if Ns<500
     
@@ -176,13 +182,19 @@ if Ns<500
     axis tight
     
     subplot(414)
-    plot(lag*delta,sum(xc)/Ns)
+    plot(lag*delta,xcstack)
     xlabel('time lag')
     xlim([min(lag*delta),max(lag*delta)])
+    ylm=1.1*min(xcstack(1,1:(totsamp-length(s))));
+    ylM=1.1*max(xcstack(1,1:(totsamp-length(s))));
+    ylim([ylm ylM])
 end
 
 figure
-plot(lag*delta,sum(xc)/Ns)
+plot(lag*delta,xcstack)
 xlabel('time lag')
 xlim([min(lag*delta),max(lag*delta)])
 title('stack of all cross correlations')
+ylm=1.1*min(xcstack(1,1:(totsamp-length(s))));
+ylM=1.1*max(xcstack(1,1:(totsamp-length(s))));
+ylim([ylm ylM])
