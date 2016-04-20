@@ -2,18 +2,22 @@
 % create animation to demonstrate direct wave correlation for GF
 % This shows the relationship of direct arrivals from a distribution of
 % sources to the cross correlation function
+clear, close all
 
 % Try a small number of sources first (Ns=20), so you can see what is going
 % on. Then increase the number of sources (Ns=1000) for more effective
 % interference. You can see how the source XC changes with increasing
 % numbers of sources
+Ns=50;
 
 % Another thing to modify is the distribution of sources. You can change
 % the range of angles (see phi below) as well as the range of distances
 % (see r below)
 
-clear, close all
-Ns=4000;
+% Lastly, you can add a single scatterer (xD,yD below). Change this flag to
+% 1 if you want to include the scatterer
+scatterer_flag=1; % note that if you change this to 1,
+
 
 % First, define station locations:
 xA=-100; % distance units can be anything here
@@ -26,6 +30,7 @@ yB=0;
 
 % Here phi is the angle measured CCW from positive X.
 phi=linspace(0,2*pi,Ns);
+% phi=phi-3*pi/2;
 % Try removing a section of sources to see how it influences the final XC
 % function
 % phi=linspace(0.25,1.25*pi,Ns);
@@ -33,7 +38,7 @@ phi=linspace(0,2*pi,Ns);
 r=250; % this is the radius of the circle of sources
 
 % You can also try sources at random distances. What you will see is it
-% does not change the correlation function much although it obviously 
+% does not change the correlation function much although it obviously
 % changes the arrival times of the direct waves at the stations
 % r=randi([500 1000],1,Ns);
 xs=r.*cos(phi);  % x position of sources
@@ -84,37 +89,64 @@ ttA=dA/c; % and the travel times
 dB=sqrt( (xB-xs).^2 + (yB-ys).^2);
 ttB=dB/c;
 
-%% 
+
+% add a scatterer
+if scatterer_flag
+    disp('adding scattered arrival')
+    
+    xD=0;
+    yD=-200;
+    figure(1)
+    plot(xD,yD,'ko')
+    dDA=sqrt( (xD-xs).^2 + (yD-ys).^2) + sqrt( (xD-xA).^2 + (yD-yA).^2  );
+    ttDA=dDA/c;
+    dDB=sqrt( (xD-xs).^2 + (yD-ys).^2) + sqrt( (xD-xB).^2 + (yD-yB).^2  );
+    ttDB=dDB/c;
+    totsamp=ceil(max([ttA,ttB,ttDA,ttDB])/delta)+nsamp;
+    
+    ttAsamp=round(ttA/delta);
+    ttBsamp=round(ttB/delta);
+    ttDAsamp=round(ttDA/delta);
+    ttDBsamp=round(ttDB/delta);
+    
+else
+    totsamp=ceil(max([ttA,ttB])/delta)+nsamp;
+    ttAsamp=round(ttA/delta);
+    ttBsamp=round(ttB/delta);
+    
+end
+%%
 % and the seismograms for A and B
-totsamp=ceil(max([ttA,ttB])/delta)+nsamp;
 tottime=totsamp*delta;
 seisA=zeros(Ns,totsamp);
 seisB=seisA;
 
-ttAsamp=round(ttA/delta);
-ttBsamp=round(ttB/delta);
 for n=1:Ns
     seisA(n,ttAsamp(n)+1:ttAsamp(n)+nsamp)=s;
     seisB(n,ttBsamp(n)+1:ttBsamp(n)+nsamp)=s;
+    if scatterer_flag
+        seisA(n,ttDAsamp(n)+1:ttDAsamp(n)+nsamp)=s;
+        seisB(n,ttDBsamp(n)+1:ttDBsamp(n)+nsamp)=s;
+    end
 end
 
 % do not plot these if the number of sources is more than 500
 if Ns<500
-figure
-offset=rad2deg(phi)'*ones(1,totsamp);
-tvec=(0:totsamp-1)*delta;
-normval=offset(2,1)-offset(1,1);
-subplot(211)
-plot(tvec,normval*seisA+offset,'k')
-ylabel('center-to-source angle')
-title('receiver A')
-
-subplot(212)
-plot(tvec,normval*seisB+offset,'k')
-ylabel('center-to-source angle')
-xlabel('time')
-title('receiver B')
-drawnow
+    figure
+    offset=rad2deg(phi)'*ones(1,totsamp);
+    tvec=(0:totsamp-1)*delta;
+    normval=offset(2,1)-offset(1,1);
+    subplot(211)
+    plot(tvec,normval*seisA+offset,'k')
+    ylabel('center-to-source angle')
+    title('receiver A')
+    
+    subplot(212)
+    plot(tvec,normval*seisB+offset,'k')
+    ylabel('center-to-source angle')
+    xlabel('time')
+    title('receiver B')
+    drawnow
 end
 %%
 % now cross correlate
@@ -123,21 +155,30 @@ for n=1:Ns
     [xc(n,:),lag]=xcorr(seisA(n,:),seisB(n,:),'coeff');
 end
 
+% if there is a scatterer, you will get a large positive correlation at 0
+% lag. You can zero that out here
+if scatterer_flag
+    midsamp=totsamp;
+    srtsamp=midsamp-length(s);
+    stpsamp=midsamp+length(s);
+    xc(:,srtsamp:stpsamp)=0*xc(:,srtsamp:stpsamp);
+end
+
 if Ns<500
-
-figure
-offset2=rad2deg(phi)'*ones(1,size(xc,2));
-
-subplot(4,1,1:3)
-plot(lag*delta,normval*xc+offset2,'k')
-ylabel('center-to-source angle')
-xlabel('time lag')
-axis tight
-
-subplot(414)
-plot(lag*delta,sum(xc)/Ns)
-xlabel('time lag')
-xlim([min(lag*delta),max(lag*delta)])
+    
+    figure
+    offset2=rad2deg(phi)'*ones(1,size(xc,2));
+    
+    subplot(4,1,1:3)
+    plot(lag*delta,normval*xc+offset2,'k')
+    ylabel('center-to-source angle')
+    xlabel('time lag')
+    axis tight
+    
+    subplot(414)
+    plot(lag*delta,sum(xc)/Ns)
+    xlabel('time lag')
+    xlim([min(lag*delta),max(lag*delta)])
 end
 
 figure
