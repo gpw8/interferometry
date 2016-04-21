@@ -95,7 +95,7 @@ if scatterer_flag
     disp('adding scattered arrival')
     
     xD=0;
-    yD=-250;
+    yD=-150;
     figure(1)
     plot(xD,yD,'ko'); legend('station A','station B','sources','scatterer')
     
